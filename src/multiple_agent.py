@@ -1,8 +1,8 @@
 import os
 import datetime
+import asyncio
 from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
-import openai
 
 
 def get_current_time() -> str:
@@ -31,6 +31,16 @@ def setup_openai_key():
             exit(1)
     
     return openai_api_key
+
+
+async def process_agent_response(agent, user_input):
+    response_generator = agent.run_live(user_input)
+    final_response = None
+    
+    async for response in response_generator:
+        final_response = response
+    
+    return final_response
 
 
 def main():
@@ -76,6 +86,8 @@ def main():
     print("- 'Can you tell me the current time?'")
     print("- 'Please organize my files'")
     
+    loop = asyncio.get_event_loop()
+    
     while True:
         # Get user input
         user_input = input("\nYou: ")
@@ -85,10 +97,17 @@ def main():
             break
         
         try:
-            response = coordinator.generate(user_input)
+            # Process the async response
+            response = loop.run_until_complete(process_agent_response(coordinator, user_input))
             
             # Print the agent's response
-            print(f"Agent: {response.text}")
+            # Handle different response types
+            if hasattr(response, 'text'):
+                print(f"Agent: {response.text}")
+            elif isinstance(response, str):
+                print(f"Agent: {response}")
+            else:
+                print(f"Agent: {str(response)}")
         except Exception as e:
             print(f"Error: {str(e)}")
 
