@@ -190,6 +190,7 @@ def list_agents():
     """List all available agents and their descriptions."""
     agent_info = {}
     for name, agent in agents.items():
+        
         agent_info[name] = {
             "description": agent.description,
             "tools": getattr(agent, 'tools', []),
